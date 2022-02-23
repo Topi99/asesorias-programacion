@@ -1,18 +1,25 @@
 """
 Very advanced Employee management system.
 """
-
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum, auto
 
 FIXED_VACATION_DAYS_PAYOUT = 5  # The fixed nr of vacation days that can be paid out.
 
 
+class Role(Enum):
+    Manager = auto()
+    VicePresident = auto()
+    Inter = auto()
+
+
 @dataclass
-class Employee:
+class Employee(ABC):
     """Basic representation of an employee at the company."""
 
     name: str
-    role: str
+    role: Role
     vacation_days: int = 25
 
     def take_a_holiday(self, payout: bool) -> None:
@@ -38,20 +45,35 @@ class Employee:
             self.vacation_days -= 1
             print("Have fun on your holiday. Don't forget to check your emails!")
 
+    @abstractmethod
+    def pay(self) -> None:
+        """Pays to the employee"""
+
 
 @dataclass
 class HourlyEmployee(Employee):
     """Employee that's paid based on number of worked hours."""
 
-    hourly_rate: float = 50
-    amount: int = 10
+    hourly_rate_in_dollars: float = 50
+    hours_worked: int = 10
+
+    def pay(self) -> None:
+        print(
+            f"Paying employee {self.name} a hourly rate of \
+                ${self.hourly_rate_in_dollars} for {self.hours_worked} hours."
+        )
 
 
 @dataclass
 class SalariedEmployee(Employee):
     """Employee that's paid based on a fixed monthly salary."""
 
-    monthly_salary: float = 5000
+    monthly_salary_in_dollars: float = 5000
+
+    def pay(self) -> None:
+        print(
+            f"Paying employee {self.name} a monthly salary of ${self.monthly_salary_in_dollars}."
+        )
 
 
 class Company:
@@ -64,51 +86,23 @@ class Company:
         """Add an employee to the list of employees."""
         self.employees.append(employee)
 
-    def find_managers(self) -> list[Employee]:
-        """Find all manager employees."""
-        managers = []
-        for employee in self.employees:
-            if employee.role == "manager":
-                managers.append(employee)
-        return managers
-
-    def find_vice_presidents(self) -> list[Employee]:
-        """Find all vice-president employees."""
-        vice_presidents = []
-        for employee in self.employees:
-            if employee.role == "vice_president":
-                vice_presidents.append(employee)
-        return vice_presidents
-
-    def find_interns(self) -> list[Employee]:
-        """Find all interns."""
-        interns = []
-        for employee in self.employees:
-            if employee.role == "intern":
-                interns.append(employee)
-        return interns
-
-    def pay_employee(self, employee: Employee) -> None:
-        """Pay an employee."""
-        if isinstance(employee, SalariedEmployee):
-            print(
-                f"Paying employee {employee.name} a monthly salary of ${employee.monthly_salary}."
-            )
-        elif isinstance(employee, HourlyEmployee):
-            print(
-                f"Paying employee {employee.name} a hourly rate of \
-                ${employee.hourly_rate} for {employee.amount} hours."
-            )
+    def find_employees(self, role: Role) -> list[Employee]:
+        """Find all employees with a specific role."""
+        return [
+            employee
+            for employee in self.employees
+            if employee.role == role
+        ]
 
 
 company = Company()
 
-company.add_employee(SalariedEmployee(name="Louis", role="manager"))
-company.add_employee(HourlyEmployee(name="Brenda", role="president"))
-company.add_employee(HourlyEmployee(name="Tim", role="intern"))
+company.add_employee(SalariedEmployee(name="Louis", role=Role.Manager))
+company.add_employee(HourlyEmployee(name="Brenda", role=Role.VicePresident))
+company.add_employee(HourlyEmployee(name="Tim", role=Role.Inter))
 
-print(company.find_vice_presidents())
-print(company.find_managers())
-print(company.find_interns())
-company.pay_employee(company.employees[0])
+print(company.find_employees(Role.VicePresident))
+print(company.find_employees(Role.Manager))
+print(company.find_employees(Role.Inter))
+company.employees[0].pay()
 company.employees[0].take_a_holiday(False)
